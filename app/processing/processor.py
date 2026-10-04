@@ -336,7 +336,18 @@ def process_video(
         filters += banner_chain
         current = "[bannered]"
 
-    # 5. Концовка — после всех эффектов
+    # Режим 5 добавляет видео поверх основного кадра, но до финальной
+    # картинки, чтобы концовка всегда оставалась верхним слоем.
+    if top_overlay_index is not None:
+        filters += top_overlay_filters(
+            video_label=current,
+            overlay_index=top_overlay_index,
+            output_label="[top_overlayed]",
+            fps=fps,
+        )
+        current = "[top_overlayed]"
+
+    # 5. Концовка — самый верхний слой после всех эффектов.
     outro_file = find_outro_image() if options.outro else None
     total_duration = duration
     outro_label: str | None = None
@@ -389,16 +400,6 @@ def process_video(
         total_duration = duration + OUTRO_DURATION
         outro_label = f"в конце на {OUTRO_DURATION:g} сек"
 
-    # Режим 5 добавляет видео только после обработки основного кадра.
-    if top_overlay_index is not None:
-        filters += top_overlay_filters(
-            video_label=current,
-            overlay_index=top_overlay_index,
-            output_label="[top_overlayed]",
-            fps=fps,
-        )
-        current = "[top_overlayed]"
-
     filters.append(f"{current}format=yuv420p[vout]")
 
     # ------------------------------------------
@@ -432,10 +433,11 @@ def process_video(
                 "[0:a]aresample=48000,"
                 f"apad=whole_dur={total_duration:.3f}[orig];"
                 "[orig][music]amix=inputs=2:duration=first:"
-                "dropout_transition=0:normalize=0[aout]"
+                "dropout_transition=0:normalize=0,"
+                "alimiter=limit=0.95:level=0[aout]"
             )
         else:
-            filters.append("[music]anull[aout]")
+            filters.append("[music]alimiter=limit=0.95:level=0[aout]")
 
         audio_map = "[aout]"
 

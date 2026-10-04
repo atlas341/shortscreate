@@ -143,7 +143,7 @@ def get_settings_keyboard(runtime: dict) -> InlineKeyboardMarkup:
         [_button(f"🎵 Фоновая музыка: {music_state}", "adm:set:music_toggle")],
         [
             _button("➖", "adm:set:music_volume_percent:-1"),
-            _button(f"Громкость {runtime['music_volume_percent']:g}%", "adm:noop"),
+            _button(f"Громкость музыки {runtime['music_volume_percent']:g}%", "adm:noop"),
             _button("➕", "adm:set:music_volume_percent:1"),
         ],
         [
