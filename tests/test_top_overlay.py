@@ -9,6 +9,7 @@ from app.processing.top_overlay import (
     top_overlay_base_filters,
     top_overlay_filters,
 )
+from app.processing.outro import outro_filters, outro_overlay_filters
 
 
 class TopOverlayFiltersTest(unittest.TestCase):
@@ -53,8 +54,45 @@ class TopOverlayFiltersTest(unittest.TestCase):
         )
 
 
+class OutroFiltersTest(unittest.TestCase):
+    def test_append_image_is_scaled_and_cropped_to_full_frame(self) -> None:
+        filters = outro_filters(
+            video_label="[top_overlayed]",
+            input_index=3,
+            video_width=1080,
+            video_height=1920,
+            video_duration=12,
+            output_label="[with_outro]",
+            fps=30,
+        )
+
+        self.assertIn(
+            "[3:v]scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,"
+            "crop=1080:1920",
+            filters[1],
+        )
+        self.assertIn("[outro_main][outro_image]concat=n=2:v=1:a=0[with_outro]", filters[2])
+
+    def test_overlay_image_covers_full_frame_after_video_effects(self) -> None:
+        filters = outro_overlay_filters(
+            video_label="[top_overlayed]",
+            input_index=3,
+            video_width=1080,
+            video_height=1920,
+            video_duration=12,
+            overlay_seconds=3,
+            output_label="[with_outro]",
+            fps=30,
+        )
+
+        self.assertIn("scale=1080:1920:", filters[1])
+        self.assertIn("crop=1080:1920", filters[1])
+        self.assertIn("[outro_main][outro_image]overlay=", filters[2])
+        self.assertTrue(filters[2].endswith("[with_outro]"))
+
+
 class TopOverlayProcessorTest(unittest.TestCase):
-    def test_overlay_is_last_video_layer_after_subtitles_banner_and_outro(self) -> None:
+    def test_outro_is_last_video_layer_after_top_overlay(self) -> None:
         with TemporaryDirectory(dir=processor.settings.base_dir) as temp_dir:
             root = Path(temp_dir)
             input_file = root / "source.mp4"
@@ -115,7 +153,9 @@ class TopOverlayProcessorTest(unittest.TestCase):
                 patch.object(
                     processor,
                     "outro_filters",
-                    return_value=["[bannered]outro[with_outro]"],
+                    side_effect=lambda video_label, output_label, **kwargs: [
+                        f"{video_label}outro{output_label}"
+                    ],
                 ),
                 patch.object(
                     processor,
@@ -156,10 +196,10 @@ class TopOverlayProcessorTest(unittest.TestCase):
             expected_order = [
                 "[uniq]ass=filename=",
                 "[subbed]banner[bannered]",
-                "[bannered]outro[with_outro]",
                 "[2:v]scale=1080:300[topvideo]",
-                "[with_outro][topvideo]overlay=x=0:y=0:shortest=1[top_overlayed]",
-                "[top_overlayed]format=yuv420p[vout]",
+                "[bannered][topvideo]overlay=x=0:y=0:shortest=1[top_overlayed]",
+                "[top_overlayed]outro[with_outro]",
+                "[with_outro]format=yuv420p[vout]",
             ]
             positions = [filter_graph.index(part) for part in expected_order]
 
