@@ -1,0 +1,53 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Database
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# Temporary files
+work/input/*
+work/temp/*
+work/output/*
+
+# Keep directories
+!work/input/.gitkeep
+!work/temp/.gitkeep
+!work/output/.gitkeep
+
+# Local assets
+assets/banners/*
+assets/music/*
+# Тяжёлые файлы: модель Whisper и фоновые видео
+assets/models/*
+assets/backgrounds/*
+assets/outro/*
+assets/fonts/*
+assets/overlays/*
+!assets/overlays/.gitkeep
+!assets/fonts/.gitkeep
+!assets/outro/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+# Runtime stats (contains user IDs)
+data/stats.json
+# Шаблоны субтитров пользователей
+data/subtitle_templates.json
